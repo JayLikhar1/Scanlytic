@@ -5,10 +5,22 @@ from models.resume_analyzer import ResumeAnalyzer
 import json
 from datetime import datetime
 import logging
+import spacy
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Try to load spaCy model
+try:
+    logger.info("Loading spaCy model...")
+    nlp = spacy.load('en_core_web_sm')
+    logger.info("SpaCy model loaded successfully!")
+except OSError:
+    logger.warning("SpaCy model not found. Downloading...")
+    spacy.cli.download('en_core_web_sm')
+    nlp = spacy.load('en_core_web_sm')
+    logger.info("SpaCy model downloaded and loaded successfully!")
 
 app = Flask(__name__, 
     static_url_path='',

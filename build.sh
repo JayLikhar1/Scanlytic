@@ -13,8 +13,8 @@ pip install -r requirements.txt
 echo "Creating uploads directory..."
 mkdir -p uploads
 
-# Download spaCy model
-echo "Downloading spaCy model..."
+# Install spaCy model
+echo "Installing spaCy model..."
 python -m spacy download en_core_web_sm
 
 # Verify spaCy model installation
