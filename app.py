@@ -2,7 +2,7 @@ import os
 import logging
 from flask import Flask, request, jsonify, send_from_directory, render_template
 from werkzeug.utils import secure_filename
-from models.resume_analyzer import ResumeAnalyzer
+from resume_analyzer import ResumeAnalyzer
 import json
 from datetime import datetime
 import spacy
@@ -29,7 +29,8 @@ except OSError:
     nlp = spacy.load('en_core_web_sm')
     logger.info("SpaCy model downloaded and loaded successfully!")
 
-analyzer = ResumeAnalyzer(nlp)
+# Initialize analyzer without passing nlp
+analyzer = ResumeAnalyzer()
 logger.info("ResumeAnalyzer initialized successfully!")
 
 @app.route('/')
