@@ -3,7 +3,7 @@ services:
     name: scanlytic
     env: python
     buildCommand: chmod +x build.sh && ./build.sh
-    startCommand: gunicorn app:app
+    startCommand: gunicorn app:app --workers 2 --threads 2 --timeout 120
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
@@ -16,4 +16,6 @@ services:
       - key: UPLOAD_FOLDER
         value: uploads
       - key: MAX_CONTENT_LENGTH
-        value: 16777216 
+        value: 16777216
+      - key: GUNICORN_CMD_ARGS
+        value: "--workers=2 --threads=2 --timeout=120" 
