@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanlytic - Intelligent Resume Analysis</title>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <style>
+        :root {
+            /* Light theme (default) */
+            --background-color: #ffffff;
+            --card-background: #ffffff;
+            --text-primary: #1a1a1a;
+            --text-secondary: #4a5568;
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --border-color: #e2e8f0;
+            --shadow-small: 0 2px 4px rgba(0, 0, 0, 0.05);
+            --shadow-medium: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-large: 0 10px 15px rgba(0, 0, 0, 0.1);
+            --accent-color: #10B981;
+            --danger-color: #EF4444;
+        }
+
+        [data-theme="dark"] {
+            --background-color: #1a1a1a;
+            --card-background: #2d2d2d;
+            --text-primary: #ffffff;
+            --text-secondary: #a0aec0;
+            --primary-color: #3b82f6;
+            --primary-hover: #60a5fa;
+            --border-color: #4a5568;
+            --shadow-small: 0 2px 4px rgba(0, 0, 0, 0.2);
+            --shadow-medium: 0 4px 6px rgba(0, 0, 0, 0.3);
+            --shadow-large: 0 10px 15px rgba(0, 0, 0, 0.3);
+            --accent-color: #34D399;
+            --danger-color: #F87171;
+        }
+
+        /* Theme toggle button styles */
+        .theme-toggle {
+            background: none;
+            border: none;
+            padding: 0.5rem;
+            cursor: pointer;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .theme-toggle i {
+            font-size: 1.2rem;
+        }
+
+        .theme-toggle .fa-sun {
+            display: none;
+        }
+
+        .theme-toggle .fa-moon {
+            display: inline-block;
+        }
+
+        [data-theme="dark"] .theme-toggle .fa-sun {
+            display: inline-block;
+        }
+
+        [data-theme="dark"] .theme-toggle .fa-moon {
+            display: none;
+        }
+
+        /* Add transition for theme switching */
+        body {
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .result-card, .feature-card, .upload-card, .skills-category {
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        /* Navigation */
+        nav {
+            background-color: var(--card-background);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 1rem 0;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-color);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+            color: white;
+            padding: 8rem 0 4rem;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background-color: white;
+            color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: #f8fafc;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: translateY(-1px);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 4rem 0;
+            background-color: var(--card-background);
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .section-title h2 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background-color: var(--background-color);
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+        }
+
+        /* Upload Section */
+        .upload-section {
+            padding: 4rem 0;
+            background-color: var(--background-color);
+        }
+
+        .upload-card {
+            background-color: var(--card-background);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .upload-card h2 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        #resume-drop-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: 0.5rem;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        #resume-drop-zone:hover {
+            border-color: var(--primary-color);
+            background-color: rgba(37, 99, 235, 0.05);
+        }
+
+        #resume-drop-zone i {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        #resume-drop-zone p {
+            color: var(--text-secondary);
+            margin: 0.5rem 0;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-label {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .file-label:hover {
+            background-color: var(--primary-hover);
+        }
+
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        /* Results Section */
+        .results-section {
+            padding: 4rem 0;
+            background-color: var(--background-color);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .result-card {
+            background-color: var(--card-background);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .result-card h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .score-breakdown {
+            margin-top: 2rem;
+        }
+
+        .score-item {
+            margin-bottom: 1rem;
+        }
+
+        .score-item h4 {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .score-bar {
+            height: 8px;
+            background-color: var(--border-color);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .score-bar-fill {
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .skill-tag {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin: 0.25rem;
+        }
+
+        .skill-tag.technical {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        .skill-tag.soft {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .skill-tag.missing {
+            background-color: #fef3c7;
+            color: #b45309;
+        }
+
+        /* Footer */
+        footer {
+            background-color: var(--card-background);
+            padding: 4rem 0 2rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-section h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .footer-section p {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary-color);
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .social-links a {
+            color: var(--text-secondary);
+            font-size: 1.25rem;
+            transition: color 0.2s;
+        }
+
+        .social-links a:hover {
+            color: var(--primary-color);
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        /* Utility Classes */
+        .hidden {
+            display: none;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .mt-4 {
+            margin-top: 1rem;
+        }
+
+        .mb-4 {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <div class="logo">
+                <i class="fas fa-file-alt"></i>
+                <span>Scanlytic</span>
+            </div>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#upload">Upload</a>
+                <a href="#results">Results</a>
+                <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
+                    <i class="fas fa-sun"></i>
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1>Intelligent Resume Analysis</h1>
+            <p>Get instant feedback on your resume's ATS compatibility and job match score</p>
+            <div class="hero-buttons">
+                <a href="#upload" class="btn btn-primary">Analyze Resume</a>
+                <a href="#features" class="btn btn-secondary">Learn More</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-title">
+                <h2>Key Features</h2>
+                <p>Everything you need to optimize your resume</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <i class="fas fa-robot feature-icon"></i>
+                    <h3>ATS Optimization</h3>
+                    <p>Get detailed feedback on how well your resume matches ATS requirements</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-briefcase feature-icon"></i>
+                    <h3>Job Matching</h3>
+                    <p>Find the best matching jobs based on your skills and experience</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-chart-line feature-icon"></i>
+                    <h3>Performance Analytics</h3>
+                    <p>Track your resume's performance and get improvement suggestions</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Upload Section -->
+    <section id="upload" class="upload-section">
+        <div class="container">
+            <div class="upload-card">
+                <h2>Upload Your Resume</h2>
+                <form id="upload-form">
+                    <div class="form-group">
+                        <label>Resume File (PDF)</label>
+                        <div id="resume-drop-zone">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <div>
+                                <label class="file-label">
+                                    <span>Upload a file</span>
+                                    <input type="file" name="resume" accept=".pdf" class="file-input">
+                                </label>
+                                <p class="default-drop-text">or drag and drop</p>
+                            </div>
+                            <p>PDF up to 10MB</p>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary">
+                            Analyze Resume
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Results Section -->
+    <section id="results" class="results-section hidden">
+        <div class="container">
+            <div class="results-grid">
+                <!-- ATS Score -->
+                <div class="result-card">
+                    <h2>ATS Score</h2>
+                    <div id="ats-gauge">
+                        <canvas></canvas>
+                    </div>
+                    <!-- ATS Score Breakdown -->
+                    <div class="score-breakdown">
+                        <h3>Score Breakdown</h3>
+                        <div class="score-item">
+                            <h4>Keyword Match</h4>
+                            <div class="score-bar">
+                                <div id="keyword-match-bar" class="score-bar-fill"></div>
+                            </div>
+                            <p>25 points</p>
+                        </div>
+                        <div class="score-item">
+                            <h4>Section Presence</h4>
+                            <div class="score-bar">
+                                <div id="section-presence-bar" class="score-bar-fill"></div>
+                            </div>
+                            <p>10 points</p>
+                        </div>
+                        <div class="score-item">
+                            <h4>Experience Relevance</h4>
+                            <div class="score-bar">
+                                <div id="experience-relevance-bar" class="score-bar-fill"></div>
+                            </div>
+                            <p>15 points</p>
+                        </div>
+                        <div class="score-item">
+                            <h4>Formatting</h4>
+                            <div class="score-bar">
+                                <div id="formatting-bar" class="score-bar-fill"></div>
+                            </div>
+                            <p>10 points</p>
+                        </div>
+                        <div class="score-item">
+                            <h4>Grammar</h4>
+                            <div class="score-bar">
+                                <div id="grammar-bar" class="score-bar-fill"></div>
+                            </div>
+                            <p>10 points</p>
+                        </div>
+                        <div class="score-item">
+                            <h4>Contact Info</h4>
+                            <div class="score-bar">
+                                <div id="contact-info-bar" class="score-bar-fill"></div>
+                            </div>
+                            <p>5 points</p>
+                        </div>
+                        <div class="score-item">
+                            <h4>File Naming</h4>
+                            <div class="score-bar">
+                                <div id="filename-bar" class="score-bar-fill"></div>
+                            </div>
+                            <p>5 points</p>
+                        </div>
+                        <div class="score-item">
+                            <h4>Customization</h4>
+                            <div class="score-bar">
+                                <div id="customization-bar" class="score-bar-fill"></div>
+                            </div>
+                            <p>10 points</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resume Analysis -->
+                <div class="result-card">
+                    <h2>Resume Analysis</h2>
+                    <div id="resume-analysis">
+                        <!-- Analysis content will be dynamically inserted here -->
+                    </div>
+                </div>
+
+                <!-- Job Recommendations -->
+                <div class="result-card">
+                    <h2>Recommended Jobs</h2>
+                    <div id="job-recommendations">
+                        <!-- Job recommendations will be dynamically inserted here -->
+                    </div>
+                </div>
+
+                <!-- Skills Analysis -->
+                <div class="result-card">
+                    <h2>Skills Analysis</h2>
+                    <div class="skills-container">
+                        <div class="skills-category">
+                            <h3 class="skills-category-header">
+                                <i class="fas fa-laptop-code category-icon"></i> Technical Skills
+                                <i class="fas fa-chevron-down toggle-icon"></i>
+                            </h3>
+                            <div class="skills-category-content">
+                                <div id="technical-skills-list" class="skills-grid"></div>
+                                <p id="no-technical-skills" class="no-skills-message"></p>
+                            </div>
+                        </div>
+
+                        <div class="skills-category">
+                            <h3 class="skills-category-header">
+                                <i class="fas fa-users category-icon"></i> Soft Skills
+                                <i class="fas fa-chevron-down toggle-icon"></i>
+                            </h3>
+                            <div class="skills-category-content">
+                                <div id="soft-skills-list" class="skills-grid"></div>
+                                <p id="no-soft-skills" class="no-skills-message"></p>
+                            </div>
+                        </div>
+
+                        <div class="skills-category">
+                            <h3 class="skills-category-header">
+                                <i class="fas fa-lightbulb category-icon"></i> Suggested Skills
+                                <i class="fas fa-chevron-down toggle-icon"></i>
+                            </h3>
+                            <div class="skills-category-content">
+                                <div id="missing-skills-list" class="skills-grid"></div>
+                                <p id="no-missing-skills" class="no-skills-message"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Download Report Button -->
+            <div class="text-center mt-4">
+                <button id="download-report" class="btn btn-primary">
+                    <i class="fas fa-download"></i>
+                    Download Full Report
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-section">
+                    <h3>Scanlytic</h3>
+                    <p>Intelligent resume analysis powered by AI</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Quick Links</h3>
+                    <ul class="footer-links">
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#upload">Analyze</a></li>
+                        <li><a href="#about">About</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Connect With Us</h3>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                        <a href="#"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Scanlytic. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Custom JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+
+    <!-- Loading Overlay HTML -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p class="loading-text">Analyzing your resume...</p>
+        </div>
+    </div>
+</body>
+</html> 
