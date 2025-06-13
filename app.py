@@ -6,17 +6,14 @@ from models.resume_analyzer import ResumeAnalyzer
 import json
 from datetime import datetime
 import spacy
+import tempfile
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
-app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
-
-# Ensure upload directory exists
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Initialize ResumeAnalyzer
 try:
@@ -68,19 +65,19 @@ def analyze_resume():
         return jsonify({"error": "Invalid file type. Please upload a PDF or DOCX file"}), 400
     
     try:
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        logger.info(f"Saving uploaded file to: {filepath}")
-        file.save(filepath)
+        # Create a temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as temp_file:
+            filepath = temp_file.name
+            file.save(filepath)
         
         logger.info("Starting resume analysis")
         result = analyzer.analyze_resume(filepath)
         logger.info("Resume analysis completed successfully")
         
-        # Clean up the uploaded file
+        # Clean up the temporary file
         try:
             os.remove(filepath)
-            logger.info(f"Cleaned up uploaded file: {filepath}")
+            logger.info(f"Cleaned up temporary file: {filepath}")
         except Exception as e:
             logger.warning(f"Failed to clean up file {filepath}: {str(e)}")
         
@@ -88,11 +85,11 @@ def analyze_resume():
     
     except Exception as e:
         logger.error(f"Error during resume analysis: {str(e)}")
-        # Clean up the uploaded file in case of error
+        # Clean up the temporary file in case of error
         try:
             if os.path.exists(filepath):
                 os.remove(filepath)
-                logger.info(f"Cleaned up uploaded file after error: {filepath}")
+                logger.info(f"Cleaned up temporary file after error: {filepath}")
         except Exception as cleanup_error:
             logger.warning(f"Failed to clean up file after error: {str(cleanup_error)}")
         return jsonify({"error": str(e)}), 500
@@ -106,22 +103,35 @@ def download_report():
         if not data:
             return jsonify({"error": "No data provided"}), 400
         
-        # Generate the feedback PDF
+        # Generate the feedback PDF in a temporary file
         logger.info("Generating feedback PDF")
-        pdf_path = analyzer.generate_feedback_pdf(data)
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
+            pdf_path = temp_file.name
+        
+        analyzer.generate_feedback_pdf(data, pdf_path)
         
         # Send the file
-        return send_from_directory(
+        response = send_from_directory(
             os.path.dirname(pdf_path),
             os.path.basename(pdf_path),
             as_attachment=True,
             download_name='resume_feedback.pdf'
         )
+        
+        # Clean up the temporary file after sending
+        try:
+            os.remove(pdf_path)
+            logger.info(f"Cleaned up temporary PDF file: {pdf_path}")
+        except Exception as e:
+            logger.warning(f"Failed to clean up PDF file: {str(e)}")
+        
+        return response
     
     except Exception as e:
         logger.error(f"Error generating report: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
+# For local development
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     logger.info(f"Starting server on port {port}")

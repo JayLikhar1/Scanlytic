@@ -449,160 +449,113 @@ class ResumeAnalyzer:
         
         return tips
 
-    def generate_feedback_pdf(self, analysis_data):
-        # Create a PDF in memory
-        buffer = io.BytesIO()
-        c = canvas.Canvas(buffer, pagesize=letter)
-        width, height = letter
-
-        # Basic styling
-        c.setFont("Helvetica-Bold", 24)
-        c.setFillColorRGB(0.0, 0.2, 0.4) # Dark blue
-        c.drawString(50, height - 50, "Scanlytic Resume Analysis Report")
-
-        c.setFont("Helvetica", 12)
-        c.setFillColorRGB(0.2, 0.2, 0.2) # Dark gray
-        c.drawString(50, height - 80, f"Report Date: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}")
-
-        y_position = height - 120
-
-        # ATS Score
-        c.setFont("Helvetica-Bold", 18)
-        c.setFillColorRGB(0.0, 0.4, 0.8) # Blue
-        c.drawString(50, y_position, "ATS Score")
-        y_position -= 25
-        c.setFont("Helvetica", 14)
-        ats_score = analysis_data.get('ats_score', 0)
-        c.drawString(50, y_position, f"Overall ATS Score: {ats_score}/100")
-        y_position -= 30
-
-        # Score Breakdown
-        c.setFont("Helvetica-Bold", 16)
-        c.setFillColorRGB(0.0, 0.4, 0.8)
-        c.drawString(50, y_position, "Score Breakdown")
-        y_position -= 20
-        
-        score_breakdown = analysis_data.get('score_breakdown', {})
-        for key, value in score_breakdown.items():
-            display_name = ' '.join(word.capitalize() for word in key.split('_'))
-            c.setFont("Helvetica", 12)
-            c.setFillColorRGB(0.2, 0.2, 0.2)
-            c.drawString(70, y_position, f"{display_name}: {value} points")
-            y_position -= 15
-
-        y_position -= 20
-
-        # Analysis (Overall Assessment, Strengths, Improvements)
-        c.setFont("Helvetica-Bold", 18)
-        c.setFillColorRGB(0.0, 0.4, 0.8)
-        c.drawString(50, y_position, "Resume Analysis")
-        y_position -= 25
-
-        analysis = analysis_data.get('analysis', {})
-
-        # Overall Assessment
-        c.setFont("Helvetica-Bold", 14)
-        c.setFillColorRGB(0.2, 0.2, 0.2)
-        c.drawString(70, y_position, "Overall Assessment:")
-        y_position -= 18
-        c.setFont("Helvetica", 12)
-        self._draw_multiline_string(c, analysis.get('overall_assessment', 'N/A'), 70, y_position, width - 120)
-        y_position -= (len(analysis.get('overall_assessment', '').split('\n')) * 14) + 10
-
-        # Strengths
-        c.setFont("Helvetica-Bold", 14)
-        c.setFillColorRGB(0.2, 0.2, 0.2)
-        c.drawString(70, y_position, "Strengths:")
-        y_position -= 18
-        c.setFont("Helvetica", 12)
-        for strength in analysis.get('strengths', []):
-            self._draw_multiline_string(c, f"- {strength}", 80, y_position, width - 130)
-            y_position -= (len(strength.split('\n')) * 14) + 5
-
-        y_position -= 10
-
-        # Improvements
-        c.setFont("Helvetica-Bold", 14)
-        c.setFillColorRGB(0.2, 0.2, 0.2)
-        c.drawString(70, y_position, "Areas for Improvement:")
-        y_position -= 18
-        c.setFont("Helvetica", 12)
-        for improvement in analysis.get('improvements', []):
-            self._draw_multiline_string(c, f"- {improvement}", 80, y_position, width - 130)
-            y_position -= (len(improvement.split('\n')) * 14) + 5
-
-        y_position -= 20
-
-        # Skills Analysis
-        c.setFont("Helvetica-Bold", 18)
-        c.setFillColorRGB(0.0, 0.4, 0.8)
-        c.drawString(50, y_position, "Skills Analysis")
-        y_position -= 25
-
-        skills_analysis = analysis_data.get('skills_analysis', {})
-
-        # Technical Skills
-        c.setFont("Helvetica-Bold", 14)
-        c.setFillColorRGB(0.2, 0.2, 0.2)
-        c.drawString(70, y_position, "Technical Skills:")
-        y_position -= 18
-        c.setFont("Helvetica", 12)
-        self._draw_list_items(c, skills_analysis.get('technical', []), 70, y_position, width - 120)
-        y_position -= (len(skills_analysis.get('technical', [])) * 14) + 10
-
-        # Soft Skills
-        c.setFont("Helvetica-Bold", 14)
-        c.setFillColorRGB(0.2, 0.2, 0.2)
-        c.drawString(70, y_position, "Soft Skills:")
-        y_position -= 18
-        c.setFont("Helvetica", 12)
-        self._draw_list_items(c, skills_analysis.get('soft', []), 70, y_position, width - 120)
-        y_position -= (len(skills_analysis.get('soft', [])) * 14) + 10
-
-        # Missing Skills
-        c.setFont("Helvetica-Bold", 14)
-        c.setFillColorRGB(0.2, 0.2, 0.2)
-        c.drawString(70, y_position, "Suggested Missing Skills:")
-        y_position -= 18
-        c.setFont("Helvetica", 12)
-        self._draw_list_items(c, skills_analysis.get('missing', []), 70, y_position, width - 120)
-        y_position -= (len(skills_analysis.get('missing', [])) * 14) + 20
-
-        # Job Recommendations
-        c.setFont("Helvetica-Bold", 18)
-        c.setFillColorRGB(0.0, 0.4, 0.8)
-        c.drawString(50, y_position, "Job Recommendations")
-        y_position -= 25
-
-        job_recommendations = analysis_data.get('job_recommendations', [])
-        if job_recommendations:
-            for job in job_recommendations:
-                c.setFont("Helvetica-Bold", 12)
-                c.setFillColorRGB(0.2, 0.2, 0.2)
-                c.drawString(70, y_position, f"{job.get('title', 'N/A')} at {job.get('company', 'N/A')}")
-                y_position -= 15
-                c.setFont("Helvetica", 10)
-                c.drawString(80, y_position, f"Location: {job.get('location', 'N/A')}")
-                y_position -= 12
-                c.drawString(80, y_position, f"Match Score: {job.get('match_score', 0)}%")
-                y_position -= 12
-                c.drawString(80, y_position, f"Link: {job.get('link', 'N/A')}")
-                y_position -= 25
+    def generate_feedback_pdf(self, analysis_data, output_path=None):
+        """Generate a PDF report with the analysis results"""
+        if output_path:
+            c = canvas.Canvas(output_path, pagesize=letter)
         else:
-            c.setFont("Helvetica", 12)
-            c.setFillColorRGB(0.4, 0.4, 0.4)
-            c.drawString(70, y_position, "No job recommendations available.")
-            y_position -= 20
-
-        # Footer
-        c.setFont("Helvetica-Oblique", 10)
-        c.setFillColorRGB(0.5, 0.5, 0.5)
-        c.drawString(50, 50, "Report generated by Scanlytic")
-
-        c.showPage()
+            # Create a PDF in memory
+            buffer = io.BytesIO()
+            c = canvas.Canvas(buffer, pagesize=letter)
+        
+        # Set up the PDF
+        width, height = letter
+        margin = 50
+        current_y = height - margin
+        
+        # Title
+        c.setFont("Helvetica-Bold", 24)
+        c.drawString(margin, current_y, "Resume Analysis Report")
+        current_y -= 40
+        
+        # ATS Score
+        c.setFont("Helvetica-Bold", 16)
+        c.drawString(margin, current_y, "ATS Score")
+        current_y -= 25
+        
+        c.setFont("Helvetica", 12)
+        score_text = f"Overall Score: {analysis_data['ats_score']['total_score']}/100"
+        c.drawString(margin, current_y, score_text)
+        current_y -= 25
+        
+        # Score Breakdown
+        c.setFont("Helvetica-Bold", 14)
+        c.drawString(margin, current_y, "Score Breakdown")
+        current_y -= 25
+        
+        c.setFont("Helvetica", 10)
+        for category, score in analysis_data['ats_score']['scores'].items():
+            category_text = f"{category.replace('_', ' ').title()}: {score} points"
+            c.drawString(margin + 20, current_y, category_text)
+            current_y -= 20
+            
+            # Add feedback for this category
+            if category in analysis_data['ats_score']['feedback']:
+                feedback = analysis_data['ats_score']['feedback'][category]
+                if feedback:
+                    c.setFont("Helvetica-Oblique", 9)
+                    for item in feedback:
+                        if current_y < margin + 50:  # Check if we need a new page
+                            c.showPage()
+                            current_y = height - margin
+                        c.drawString(margin + 40, current_y, f"• {item}")
+                        current_y -= 15
+                    c.setFont("Helvetica", 10)
+        
+        # Skills Analysis
+        if current_y < margin + 100:  # Check if we need a new page
+            c.showPage()
+            current_y = height - margin
+            
+        c.setFont("Helvetica-Bold", 14)
+        c.drawString(margin, current_y, "Skills Analysis")
+        current_y -= 25
+        
+        c.setFont("Helvetica", 10)
+        for category, skills in analysis_data['skills_analysis'].items():
+            if current_y < margin + 50:  # Check if we need a new page
+                c.showPage()
+                current_y = height - margin
+                
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(margin, current_y, category.replace('_', ' ').title())
+            current_y -= 20
+            
+            c.setFont("Helvetica", 10)
+            skills_text = ", ".join(skills)
+            self._draw_multiline_string(c, skills_text, margin + 20, current_y, width - 2 * margin)
+            current_y -= 40
+        
+        # Job Recommendations
+        if current_y < margin + 100:  # Check if we need a new page
+            c.showPage()
+            current_y = height - margin
+            
+        c.setFont("Helvetica-Bold", 14)
+        c.drawString(margin, current_y, "Job Recommendations")
+        current_y -= 25
+        
+        c.setFont("Helvetica", 10)
+        for job in analysis_data['job_recommendations']:
+            if current_y < margin + 100:  # Check if we need a new page
+                c.showPage()
+                current_y = height - margin
+                
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(margin, current_y, job['title'])
+            current_y -= 20
+            
+            c.setFont("Helvetica", 10)
+            self._draw_multiline_string(c, job['description'], margin + 20, current_y, width - 2 * margin)
+            current_y -= 40
+        
+        # Save the PDF
         c.save()
-        buffer.seek(0)
-        return buffer
+        
+        if not output_path:
+            buffer.seek(0)
+            return buffer
+        return output_path
 
     def _draw_multiline_string(self, canvas, text, x, y, max_width):
         from reportlab.lib.enums import TA_LEFT
