@@ -2,7 +2,7 @@ import os
 import logging
 from flask import Flask, request, jsonify, send_from_directory, render_template
 from werkzeug.utils import secure_filename
-from resume_analyzer import ResumeAnalyzer
+from models.resume_analyzer import ResumeAnalyzer
 import json
 from datetime import datetime
 import spacy
