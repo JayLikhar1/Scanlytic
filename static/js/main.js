@@ -103,6 +103,27 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             
             const formData = new FormData(this);
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a file to upload');
+                return;
+            }
+
+            // Log file details for debugging
+            console.log('File details:', {
+                name: file.name,
+                type: file.type,
+                size: file.size
+            });
+
+            // Ensure the file is sent with the correct field name
+            formData.set('file', file);
+
+            // Log FormData contents for debugging
+            for (let pair of formData.entries()) {
+                console.log('FormData entry:', pair[0], pair[1]);
+            }
 
             try {
                 // Ensure loadingOverlay is not null before accessing classList
@@ -115,17 +136,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 analyzeButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
                 analyzeButton.disabled = true;
                 
+                console.log('Sending request to /analyze');
                 const response = await fetch('/analyze', {
                     method: 'POST',
                     body: formData
                 });
 
+                console.log('Response status:', response.status);
+                const responseText = await response.text();
+                console.log('Response text:', responseText);
+
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Analysis failed');
+                    let errorMessage;
+                    try {
+                        const errorData = JSON.parse(responseText);
+                        errorMessage = errorData.error || 'Analysis failed';
+                    } catch (e) {
+                        errorMessage = responseText || 'Analysis failed';
+                    }
+                    throw new Error(errorMessage);
                 }
 
-                const data = await response.json();
+                const data = JSON.parse(responseText);
                 
                 // Store the analysis data for the report download
                 window.analysisData = data;
