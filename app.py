@@ -10,9 +10,12 @@ app = Flask(__name__,
     static_folder='static',
     template_folder='templates'
 )
+
+# Environment variables configuration
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24))
-app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER', 'uploads')
+app.config['MAX_CONTENT_LENGTH'] = int(os.environ.get('MAX_CONTENT_LENGTH', 16 * 1024 * 1024))  # 16MB max file size
+app.config['FLASK_ENV'] = os.environ.get('FLASK_ENV', 'production')
 
 # Ensure upload directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -44,9 +47,6 @@ def analyze_resume():
         file.save(filepath)
         
         try:
-            # Get job description if provided
-            # job_description = request.form.get('job_description', '') # Removed job description handling
-            
             # Analyze resume
             analysis_results = analyzer.analyze_resume(filepath)
             
@@ -61,7 +61,7 @@ def analyze_resume():
                     'grammar': 0,
                     'contact_info': 0,
                     'filename': 0,
-                    'customization': 0 # Keep customization score, it will be based on resume alone
+                    'customization': 0
                 },
                 'analysis': {
                     'overall_assessment': '',
@@ -118,4 +118,5 @@ def download_report():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port) 
+    debug = app.config['FLASK_ENV'] == 'development'
+    app.run(host='0.0.0.0', port=port, debug=debug) 
