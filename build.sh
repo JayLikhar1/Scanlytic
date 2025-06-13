@@ -2,11 +2,27 @@
 # exit on error
 set -o errexit
 
+# Print Python version
+python --version
+
 # Install Python dependencies
+echo "Installing Python dependencies..."
 pip install -r requirements.txt
 
 # Create uploads directory
+echo "Creating uploads directory..."
 mkdir -p uploads
 
 # Download spaCy model
-python -m spacy download en_core_web_sm 
+echo "Downloading spaCy model..."
+python -m spacy download en_core_web_sm
+
+# Verify spaCy model installation
+echo "Verifying spaCy model..."
+python -c "import spacy; nlp = spacy.load('en_core_web_sm'); print('SpaCy model loaded successfully!')"
+
+# Print directory structure
+echo "Current directory structure:"
+ls -la
+
+echo "Build completed successfully!" 
