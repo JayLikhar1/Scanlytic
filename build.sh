@@ -2,11 +2,18 @@
 # exit on error
 set -o errexit
 
+# Install system dependencies
+echo "Installing system dependencies..."
+apt-get update
+apt-get install -y build-essential python3-dev
+
 # Print Python version
 python --version
 
 # Install Python dependencies
 echo "Installing Python dependencies..."
+pip install --upgrade pip
+pip install wheel setuptools
 pip install -r requirements.txt
 
 # Create uploads directory
